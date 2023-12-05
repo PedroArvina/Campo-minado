@@ -31,6 +31,7 @@ public class CampoMinado {
         void revelar() {
             if (!this.aberta) {
                 abrirCelula(this);
+                trocarJogador();
             }
         }
     }
@@ -44,7 +45,7 @@ public class CampoMinado {
             this.setMargin(new Insets(0, 0, 0, 0));
             this.setFont(new Font("Minecraft Evenings", Font.PLAIN, 25));
             this.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-            this.setBackground(Color.LIGHT_GRAY); // Definindo a cor de fundo
+            this.setBackground(Color.LIGHT_GRAY);
 
             this.addMouseListener(new MouseAdapter() {
                 @Override
@@ -54,6 +55,7 @@ public class CampoMinado {
                     }
                     if (e.getButton() == MouseEvent.BUTTON1) {
                         revelar();
+                        trocarJogador();
                     } else if (e.getButton() == MouseEvent.BUTTON3) {
                         marcarBandeira(CelulaBomba.this);
                     }
@@ -66,6 +68,10 @@ public class CampoMinado {
             mostrarBombas();
         }
     }
+
+    // Variáveis para controlar os jogadores
+    int jogadorAtual = 1;
+    int totalJogadores = 2;
 
     int TamanhoDosQuadradinhos = 40;
     int NumeroDeLinhasTotal = 32;
@@ -94,7 +100,7 @@ public class CampoMinado {
 
         TextoDeTopo.setFont(new Font("Arial", Font.BOLD, 25));
         TextoDeTopo.setHorizontalAlignment(JLabel.CENTER);
-        TextoDeTopo.setText("Campo Minado: " + Integer.toString(QuantidadeDeBombasNaPartida));
+        TextoDeTopo.setText("Campo Minado: Jogador " + jogadorAtual);
         TextoDeTopo.setOpaque(true);
 
         PainelDoTexto.setLayout(new BorderLayout());
@@ -136,7 +142,6 @@ public class CampoMinado {
         JanelaInicial.setVisible(true);
         distribuidorDeBombas();
     }
-
     void distribuidorDeBombas() {
         int bombasRestantes = QuantidadeDeBombasNaPartida;
         while (bombasRestantes > 0) {
@@ -240,6 +245,10 @@ public class CampoMinado {
                 celula.setText("");
             }
         }
+    }
+    void trocarJogador() {
+        jogadorAtual = (jogadorAtual % totalJogadores) + 1;
+        TextoDeTopo.setText("Campo Minado: Jogador " + jogadorAtual);
     }
 
     public static void main(String[] args) {

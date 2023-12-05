@@ -1,4 +1,6 @@
-package campominado12;
+package campominado.gui;
+
+import campominado12.CampoMinado;
 
 public class App {
 

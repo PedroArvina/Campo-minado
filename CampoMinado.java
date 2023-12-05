@@ -2,15 +2,15 @@ package campominado12;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.util.Random;
 import javax.swing.*;
+import java.util.Random;
 
 public class CampoMinado {
-    abstract class Celula extends JButton {
-        int linha;
-        int coluna;
-        boolean aberta;
-        boolean temMina;
+    public abstract class Celula extends JButton {
+        public int linha;
+        public int coluna;
+        public boolean aberta;
+        public boolean temMina;
 
         public Celula(int linha, int coluna) {
             this.linha = linha;
@@ -19,16 +19,16 @@ public class CampoMinado {
             this.temMina = false;
         }
 
-        abstract void revelar();
+        public abstract void revelar();
     }
 
-    class CelulaVazia extends Celula {
+    public class CelulaVazia extends Celula {
         public CelulaVazia(int linha, int coluna) {
             super(linha, coluna);
         }
 
         @Override
-        void revelar() {
+        public void revelar() {
             if (!this.aberta) {
                 abrirCelula(this);
                 trocarJogador();
@@ -36,14 +36,14 @@ public class CampoMinado {
         }
     }
 
-    class CelulaBomba extends Celula {
+    public class CelulaBomba extends Celula {
         public CelulaBomba(int linha, int coluna) {
             super(linha, coluna);
             this.temMina = true;
 
             this.setFocusable(false);
             this.setMargin(new Insets(0, 0, 0, 0));
-            this.setFont(new Font("Minecraft Evenings", Font.PLAIN, 25));
+            this.setFont(new Font("Arial", Font.PLAIN, 25)); // Alterei aqui para garantir que a fonte seja padrão.
             this.setBorder(BorderFactory.createLineBorder(Color.BLACK));
             this.setBackground(Color.LIGHT_GRAY);
 
@@ -64,34 +64,34 @@ public class CampoMinado {
         }
 
         @Override
-        void revelar() {
+        public void revelar() {
             mostrarBombas();
         }
     }
 
     // Variáveis para controlar os jogadores
-    int jogadorAtual = 1;
-    int totalJogadores = 2;
+    private int jogadorAtual = 1;
+    private int totalJogadores = 2;
 
-    int TamanhoDosQuadradinhos = 40;
-    int NumeroDeLinhasTotal = 32;
-    int NumeroDeColunasTotal = NumeroDeLinhasTotal;
-    int LarguraTabuleiro = NumeroDeColunasTotal * TamanhoDosQuadradinhos;
-    int AlturaTabuleiro = NumeroDeLinhasTotal * TamanhoDosQuadradinhos;
+    private int TamanhoDosQuadradinhos = 40;
+    private int NumeroDeLinhasTotal = 32;
+    private int NumeroDeColunasTotal = NumeroDeLinhasTotal;
+    private int LarguraTabuleiro = NumeroDeColunasTotal * TamanhoDosQuadradinhos;
+    private int AlturaTabuleiro = NumeroDeLinhasTotal * TamanhoDosQuadradinhos;
 
-    JFrame JanelaInicial = new JFrame("Campo Minado");
-    JLabel TextoDeTopo = new JLabel();
-    JPanel PainelDoTexto = new JPanel();
-    JPanel PainelDosQuadradinhos = new JPanel();
+    private JFrame JanelaInicial = new JFrame("Campo Minado");
+    private JLabel TextoDeTopo = new JLabel();
+    private JPanel PainelDoTexto = new JPanel();
+    private JPanel PainelDosQuadradinhos = new JPanel();
 
-    int QuantidadeDeBombasNaPartida = 100;
-    Celula[][] MatrizDoTabuleiro = new Celula[NumeroDeLinhasTotal][NumeroDeColunasTotal];
-    Random random = new Random();
+    private int QuantidadeDeBombasNaPartida = 100;
+    private Celula[][] MatrizDoTabuleiro = new Celula[NumeroDeLinhasTotal][NumeroDeColunasTotal];
+    private Random random = new Random();
 
-    int NumeroDeQuadradosClicados = 0;
-    boolean FimDeJogo = false;
+    private int NumeroDeQuadradosClicados = 0;
+    private boolean FimDeJogo = false;
 
-    CampoMinado() {
+    public CampoMinado() {
         JanelaInicial.setSize(LarguraTabuleiro, AlturaTabuleiro);
         JanelaInicial.setLocationRelativeTo(null);
         JanelaInicial.setResizable(false);
@@ -117,7 +117,7 @@ public class CampoMinado {
 
                 celula.setFocusable(false);
                 celula.setMargin(new Insets(0, 0, 0, 0));
-                celula.setFont(new Font("Minecraft Evenings", Font.PLAIN, 25));
+                celula.setFont(new Font("Arial", Font.PLAIN, 25));
                 celula.setBorder(BorderFactory.createLineBorder(Color.BLACK));
                 celula.setBackground(Color.LIGHT_GRAY);
 
@@ -166,7 +166,7 @@ public class CampoMinado {
             for (int coluna = 0; coluna < NumeroDeColunasTotal; coluna++) {
                 Celula celula = MatrizDoTabuleiro[linha][coluna];
                 if (celula instanceof CelulaBomba) {
-                    celula.setText("💣");
+                    celula.setText("O");
                 }
             }
         }
@@ -178,6 +178,11 @@ public class CampoMinado {
     void abrirCelula(Celula celula) {
         if (celula.aberta) {
             return;
+        }
+
+        // Se a célula tem uma bandeira, remova-a antes de abrir.
+        if (!celula.getText().isEmpty()) {
+            celula.setText("");  // Remover bandeira ou emoji de bandeira.
         }
 
         if (celula.temMina) {
@@ -203,6 +208,7 @@ public class CampoMinado {
             TextoDeTopo.setText("Mines Cleared!");
         }
     }
+
 
     int contadorDeMinas(int linha, int coluna) {
         int minasEncontradas = 0;
@@ -240,7 +246,7 @@ public class CampoMinado {
     void marcarBandeira(Celula celula) {
         if (!celula.aberta) {
             if (celula.getText().isEmpty()) {
-                celula.setText("🚩");
+                celula.setText("I");
             } else {
                 celula.setText("");
             }

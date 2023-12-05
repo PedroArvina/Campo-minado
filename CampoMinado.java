@@ -2,22 +2,68 @@ package campominado12;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
 import java.util.Random;
 import javax.swing.*;
 
 public class CampoMinado {
-    private class CriadorDeQuadrado extends JButton {
-        int Linha;
-        int Coluna;
-        boolean CTemMina;
-        boolean CAberta;
+    abstract class Celula extends JButton {
+        int linha;
+        int coluna;
+        boolean aberta;
+        boolean temMina;
 
-        public CriadorDeQuadrado(int Linha, int Coluna) {
-            this.Linha = Linha;
-            this.Coluna = Coluna;
-            this.CTemMina = false;
-            this.CAberta = false;
+        public Celula(int linha, int coluna) {
+            this.linha = linha;
+            this.coluna = coluna;
+            this.aberta = false;
+            this.temMina = false;
+        }
+
+        abstract void revelar();
+    }
+
+    class CelulaVazia extends Celula {
+        public CelulaVazia(int linha, int coluna) {
+            super(linha, coluna);
+        }
+
+        @Override
+        void revelar() {
+            if (!this.aberta) {
+                abrirCelula(this);
+            }
+        }
+    }
+
+    class CelulaBomba extends Celula {
+        public CelulaBomba(int linha, int coluna) {
+            super(linha, coluna);
+            this.temMina = true;
+
+            this.setFocusable(false);
+            this.setMargin(new Insets(0, 0, 0, 0));
+            this.setFont(new Font("Minecraft Evenings", Font.PLAIN, 25));
+            this.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+            this.setBackground(Color.LIGHT_GRAY); // Definindo a cor de fundo
+
+            this.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    if (FimDeJogo || aberta) {
+                        return;
+                    }
+                    if (e.getButton() == MouseEvent.BUTTON1) {
+                        revelar();
+                    } else if (e.getButton() == MouseEvent.BUTTON3) {
+                        marcarBandeira(CelulaBomba.this);
+                    }
+                }
+            });
+        }
+
+        @Override
+        void revelar() {
+            mostrarBombas();
         }
     }
 
@@ -33,7 +79,7 @@ public class CampoMinado {
     JPanel PainelDosQuadradinhos = new JPanel();
 
     int QuantidadeDeBombasNaPartida = 100;
-    CriadorDeQuadrado[][] MatrizDoTabuleiro = new CriadorDeQuadrado[NumeroDeLinhasTotal][NumeroDeColunasTotal];
+    Celula[][] MatrizDoTabuleiro = new Celula[NumeroDeLinhasTotal][NumeroDeColunasTotal];
     Random random = new Random();
 
     int NumeroDeQuadradosClicados = 0;
@@ -60,36 +106,30 @@ public class CampoMinado {
 
         for (int Linha = 0; Linha < NumeroDeLinhasTotal; Linha++) {
             for (int Coluna = 0; Coluna < NumeroDeColunasTotal; Coluna++) {
-                CriadorDeQuadrado Quadrado = new CriadorDeQuadrado(Linha, Coluna);
-                MatrizDoTabuleiro[Linha][Coluna] = Quadrado;
+                Celula celula = new CelulaVazia(Linha, Coluna);
+                MatrizDoTabuleiro[Linha][Coluna] = celula;
 
-                Quadrado.setFocusable(false);
-                Quadrado.setMargin(new Insets(0, 0, 0, 0));
-                Quadrado.setFont(new Font("Minecraft Evenings", Font.PLAIN, 25));
-                Quadrado.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-                Quadrado.setBackground(Color.LIGHT_GRAY); 
+                celula.setFocusable(false);
+                celula.setMargin(new Insets(0, 0, 0, 0));
+                celula.setFont(new Font("Minecraft Evenings", Font.PLAIN, 25));
+                celula.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+                celula.setBackground(Color.LIGHT_GRAY);
 
-                Quadrado.addMouseListener(new MouseAdapter() {
+                celula.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mousePressed(MouseEvent e) {
-                        if (FimDeJogo || Quadrado.CAberta) {
+                        if (FimDeJogo || celula.aberta) {
                             return;
                         }
                         if (e.getButton() == MouseEvent.BUTTON1) {
-                            if (Quadrado.CTemMina) {
-                                mostrarBombas();
-                            } else {
-                                abrirQuadrado(Quadrado);
-                            }
+                            celula.revelar();
                         } else if (e.getButton() == MouseEvent.BUTTON3) {
-                            if (!Quadrado.CAberta) {
-                                enfiaBandeira(Quadrado);
-                            }
+                            marcarBandeira(celula);
                         }
                     }
                 });
 
-                PainelDosQuadradinhos.add(Quadrado);
+                PainelDosQuadradinhos.add(celula);
             }
         }
 
@@ -98,24 +138,30 @@ public class CampoMinado {
     }
 
     void distribuidorDeBombas() {
-        int mineLeft = QuantidadeDeBombasNaPartida;
-        while (mineLeft > 0) {
-            int Linha = random.nextInt(NumeroDeLinhasTotal);
-            int Coluna = random.nextInt(NumeroDeColunasTotal);
+        int bombasRestantes = QuantidadeDeBombasNaPartida;
+        while (bombasRestantes > 0) {
+            int linha = random.nextInt(NumeroDeLinhasTotal);
+            int coluna = random.nextInt(NumeroDeColunasTotal);
 
-            if (!MatrizDoTabuleiro[Linha][Coluna].CTemMina) {
-                MatrizDoTabuleiro[Linha][Coluna].CTemMina = true;
-                mineLeft -= 1;
+            Celula celula = MatrizDoTabuleiro[linha][coluna];
+            if (!(celula instanceof CelulaBomba)) {
+                PainelDosQuadradinhos.remove(celula);
+                Celula novaCelula = new CelulaBomba(linha, coluna);
+                MatrizDoTabuleiro[linha][coluna] = novaCelula;
+                PainelDosQuadradinhos.add(novaCelula, linha * NumeroDeColunasTotal + coluna);
+                bombasRestantes--;
             }
         }
+        PainelDosQuadradinhos.revalidate();
+        PainelDosQuadradinhos.repaint();
     }
 
     void mostrarBombas() {
-        for (int Linha = 0; Linha < NumeroDeLinhasTotal; Linha++) {
-            for (int Coluna = 0; Coluna < NumeroDeColunasTotal; Coluna++) {
-                CriadorDeQuadrado Quadrado = MatrizDoTabuleiro[Linha][Coluna];
-                if (Quadrado.CTemMina) {
-                    Quadrado.setText("O");
+        for (int linha = 0; linha < NumeroDeLinhasTotal; linha++) {
+            for (int coluna = 0; coluna < NumeroDeColunasTotal; coluna++) {
+                Celula celula = MatrizDoTabuleiro[linha][coluna];
+                if (celula instanceof CelulaBomba) {
+                    celula.setText("💣");
                 }
             }
         }
@@ -124,20 +170,25 @@ public class CampoMinado {
         TextoDeTopo.setText("Game Over!");
     }
 
-    void abrirQuadrado(CriadorDeQuadrado Quadrado) {
-        if (Quadrado.CAberta || Quadrado.CTemMina) {
+    void abrirCelula(Celula celula) {
+        if (celula.aberta) {
             return;
         }
 
-        Quadrado.CAberta = true;
-        Quadrado.setBackground(Color.WHITE);
+        if (celula.temMina) {
+            mostrarBombas();
+            return;
+        }
 
-        int minasEncontradas = contadorDeMinas(Quadrado.Linha, Quadrado.Coluna);
+        celula.aberta = true;
+        celula.setBackground(Color.WHITE);
+
+        int minasEncontradas = contadorDeMinas(celula.linha, celula.coluna);
 
         if (minasEncontradas > 0) {
-            Quadrado.setText(Integer.toString(minasEncontradas));
+            celula.setText(Integer.toString(minasEncontradas));
         } else {
-            abridorEmCadeia(Quadrado.Linha, Quadrado.Coluna);
+            abridorEmCadeia(celula.linha, celula.coluna);
         }
 
         NumeroDeQuadradosClicados++;
@@ -148,14 +199,15 @@ public class CampoMinado {
         }
     }
 
-    int contadorDeMinas(int Linha, int Coluna) {
+    int contadorDeMinas(int linha, int coluna) {
         int minasEncontradas = 0;
         for (int dr = -1; dr <= 1; dr++) {
             for (int dc = -1; dc <= 1; dc++) {
-                int nr = Linha + dr;
-                int nc = Coluna + dc;
+                int nr = linha + dr;
+                int nc = coluna + dc;
                 if (nr >= 0 && nr < NumeroDeLinhasTotal && nc >= 0 && nc < NumeroDeColunasTotal) {
-                    if (MatrizDoTabuleiro[nr][nc].CTemMina) {
+                    Celula vizinha = MatrizDoTabuleiro[nr][nc];
+                    if (vizinha instanceof CelulaBomba) {
                         minasEncontradas++;
                     }
                 }
@@ -164,26 +216,28 @@ public class CampoMinado {
         return minasEncontradas;
     }
 
-    void abridorEmCadeia(int Linha, int Coluna) {
+    void abridorEmCadeia(int linha, int coluna) {
         for (int dr = -1; dr <= 1; dr++) {
             for (int dc = -1; dc <= 1; dc++) {
-                int nr = Linha + dr;
-                int nc = Coluna + dc;
+                int nr = linha + dr;
+                int nc = coluna + dc;
                 if (nr >= 0 && nr < NumeroDeLinhasTotal && nc >= 0 && nc < NumeroDeColunasTotal) {
-                    if (!MatrizDoTabuleiro[nr][nc].CAberta) {
-                        abrirQuadrado(MatrizDoTabuleiro[nr][nc]);
+                    Celula vizinha = MatrizDoTabuleiro[nr][nc];
+                    if (!vizinha.aberta) {
+                        abrirCelula(vizinha);
                     }
                 }
             }
         }
     }
 
-    void enfiaBandeira(CriadorDeQuadrado Quadrado) {
-        if (!Quadrado.CAberta) {
-            if (Quadrado.getText().isEmpty()) {
-                Quadrado.setText("🚩");
+
+    void marcarBandeira(Celula celula) {
+        if (!celula.aberta) {
+            if (celula.getText().isEmpty()) {
+                celula.setText("🚩");
             } else {
-                Quadrado.setText("");
+                celula.setText("");
             }
         }
     }
